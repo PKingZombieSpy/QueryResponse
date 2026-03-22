@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QueryResponse — File Transfer via QR</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <h1>QueryResponse</h1>
+  <p>Transfer files between devices using animated QR codes</p>
+</header>
+
+<div class="mode-toggle">
+  <button id="btn-send" class="active">📤 Send</button>
+  <button id="btn-receive">📥 Receive</button>
+</div>
+
+<!-- ── Send Panel ─────────────────────────────────────────────────── -->
+<div id="panel-send" class="panel active">
+
+  <div id="drop-zone" class="drop-zone">
+    <div class="icon">📁</div>
+    <div class="label">Drop a file here or click to choose</div>
+    <input type="file" id="file-input">
+  </div>
+
+  <div id="file-info" class="file-info">
+    <div class="name" id="file-name"></div>
+    <div class="details" id="file-details"></div>
+  </div>
+
+  <div id="send-settings" class="settings">
+    <label id="fps-control">
+      FPS: <span id="fps-display">5</span>
+      <input type="range" id="setting-fps" min="0.2" max="30" step="0.2" value="5">
+    </label>
+    <label id="qr-size-control">
+      QR Size: <span id="qr-size-display">Medium</span>
+      <input type="range" id="setting-qr-size" min="1" max="3" step="1" value="2">
+    </label>
+  </div>
+
+  <button id="btn-start" class="btn btn-primary" disabled>▶ Start Sending</button>
+
+  <div id="qr-area" class="qr-area">
+    <canvas id="qr-canvas"></canvas>
+    <div class="status-text" id="send-status"></div>
+    <button id="btn-stop" class="btn btn-stop">⏹ Stop</button>
+  </div>
+
+</div>
+
+<!-- ── Receive Panel ──────────────────────────────────────────────── -->
+<div id="panel-receive" class="panel">
+
+  <div class="status-text" id="receive-status">Press Start to begin scanning</div>
+
+  <div id="camera-area" class="camera-area">
+    <video id="camera-video" playsinline></video>
+  </div>
+
+  <div class="progress-bar"><div class="fill" id="receive-progress-fill"></div></div>
+  <div class="status-text" id="receive-detail"></div>
+
+  <button id="btn-scan" class="btn btn-primary">📷 Start Scanning</button>
+  <button id="btn-scan-stop" class="btn btn-stop hidden">⏹ Stop</button>
+
+  <div id="receive-complete" class="receive-complete">
+    <div class="checkmark">✅</div>
+    <div class="file-name" id="received-file-name"></div>
+    <div class="status-text" id="received-file-details"></div>
+    <button id="btn-save" class="btn btn-save">💾 Save File</button>
+  </div>
+
+</div>
+
+<!-- ── Scripts ────────────────────────────────────────────────────── -->
+<!-- QR generation: qrcode-generator (lightweight, canvas support, byte mode) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+
+<!-- QR scanning: qr-scanner (uses BarcodeDetector when available, Web Worker fallback) -->
+<script type="module">
+  import QrScanner from 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js';
+  window.QrScanner = QrScanner;
+  // Signal that QrScanner is loaded
+  window.dispatchEvent(new Event('qrscanner-ready'));
+</script>
+
+<!-- App modules -->
+<script src="js/fountain.js"></script>
+<script src="js/qrframe.js"></script>
+<script src="js/sender.js"></script>
+<script src="js/receiver.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
