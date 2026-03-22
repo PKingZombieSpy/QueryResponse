@@ -59,12 +59,13 @@
 
   <div class="status-text" id="receive-status">Press Start to begin scanning</div>
 
+  <div id="receive-progress-area" class="receive-progress-area">
+    <div class="progress-bar"><div class="fill" id="receive-progress-fill"></div></div>
+    <div class="status-text" id="receive-detail"></div>
+  </div>
+
   <div id="camera-area" class="camera-area">
     <video id="camera-video" playsinline></video>
-    <div class="camera-overlay" id="camera-overlay">
-      <div class="progress-bar"><div class="fill" id="receive-progress-fill"></div></div>
-      <div class="overlay-text" id="receive-detail"></div>
-    </div>
   </div>
 
   <button id="btn-scan" class="btn btn-primary">📷 Start Scanning</button>

@@ -25,7 +25,7 @@ class Receiver {
     // DOM elements
     this.cameraArea = document.getElementById('camera-area');
     this.video = document.getElementById('camera-video');
-    this.cameraOverlay = document.getElementById('camera-overlay');
+    this.progressArea = document.getElementById('receive-progress-area');
     this.progressFill = document.getElementById('receive-progress-fill');
     this.statusText = document.getElementById('receive-status');
     this.detailText = document.getElementById('receive-detail');
@@ -54,7 +54,7 @@ class Receiver {
     this.fileBlob = null;
     this._uiUpdatePending = false;
     this.completePanel.classList.remove('visible');
-    this.cameraOverlay.classList.remove('visible');
+    this.progressArea.classList.remove('visible');
     this.progressFill.style.width = '0%';
     this.detailText.textContent = '';
 
@@ -94,7 +94,7 @@ class Receiver {
       // Update UI
       this.btnScan.classList.add('hidden');
       this.btnScanStop.classList.remove('hidden');
-      this.cameraOverlay.classList.add('visible');
+      this.progressArea.classList.add('visible');
       this.statusText.textContent = 'Scanning… Point camera at the QR code display.';
     } catch (err) {
       console.error('Camera error:', err);
@@ -114,7 +114,7 @@ class Receiver {
     this.btnScan.classList.remove('hidden');
     this.btnScanStop.classList.add('hidden');
     if (!this.fileBlob) {
-      this.cameraOverlay.classList.remove('visible');
+      this.progressArea.classList.remove('visible');
       this.statusText.textContent = 'Scanning stopped.';
     }
   }
@@ -217,7 +217,7 @@ class Receiver {
       `${formatSize(content.length)} · ${this.blocksReceived} blocks received · ${elapsed}s`;
     this.completePanel.classList.add('visible');
     this.progressFill.style.width = '100%';
-    this.cameraOverlay.classList.add('visible');
+    this.progressArea.classList.add('visible');
   }
 
   _saveFile() {
