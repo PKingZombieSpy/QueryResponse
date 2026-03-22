@@ -13,6 +13,7 @@ class Receiver {
     this.startTime = 0;
     this.fileBlob = null;
     this._qrScannerReady = false;
+    this._uiUpdatePending = false;
 
     // Listen for QrScanner load early to avoid race condition
     if (window.QrScanner) {
@@ -24,6 +25,7 @@ class Receiver {
     // DOM elements
     this.cameraArea = document.getElementById('camera-area');
     this.video = document.getElementById('camera-video');
+    this.cameraOverlay = document.getElementById('camera-overlay');
     this.progressFill = document.getElementById('receive-progress-fill');
     this.statusText = document.getElementById('receive-status');
     this.detailText = document.getElementById('receive-detail');
@@ -50,7 +52,9 @@ class Receiver {
     this.filename = null;
     this.blocksReceived = 0;
     this.fileBlob = null;
+    this._uiUpdatePending = false;
     this.completePanel.classList.remove('visible');
+    this.cameraOverlay.classList.remove('visible');
     this.progressFill.style.width = '0%';
     this.detailText.textContent = '';
 
@@ -90,6 +94,7 @@ class Receiver {
       // Update UI
       this.btnScan.classList.add('hidden');
       this.btnScanStop.classList.remove('hidden');
+      this.cameraOverlay.classList.add('visible');
       this.statusText.textContent = 'Scanning… Point camera at the QR code display.';
     } catch (err) {
       console.error('Camera error:', err);
@@ -109,6 +114,7 @@ class Receiver {
     this.btnScan.classList.remove('hidden');
     this.btnScanStop.classList.add('hidden');
     if (!this.fileBlob) {
+      this.cameraOverlay.classList.remove('visible');
       this.statusText.textContent = 'Scanning stopped.';
     }
   }
@@ -150,18 +156,36 @@ class Receiver {
       this.blocksReceived = this.decoder.seenBlockIds.size;
     }
 
-    // Update progress
-    const pct = (this.decoder.progress * 100).toFixed(1);
-    this.progressFill.style.width = pct + '%';
-
-    const elapsed = ((performance.now() - this.startTime) / 1000).toFixed(1);
-    this.detailText.textContent =
-      `${this.decoder.decodedCount}/${this.decoder.K} blocks decoded · ` +
-      `${this.blocksReceived} received · ${elapsed}s`;
+    // Throttle UI updates to one per animation frame
+    if (!this._uiUpdatePending) {
+      this._uiUpdatePending = true;
+      requestAnimationFrame(() => {
+        this._updateProgressUI();
+        this._uiUpdatePending = false;
+      });
+    }
 
     if (complete) {
       this._onComplete();
     }
+  }
+
+  _updateProgressUI() {
+    if (!this.decoder) return;
+
+    const received = this.blocksReceived;
+    const decoded = this.decoder.decodedCount;
+    const K = this.decoder.K;
+    // Estimate total frames needed (~15% overhead typical for LT codes)
+    const estimated = Math.ceil(K * 1.15);
+
+    // Progress bar based on received/estimated (fills smoothly)
+    const pct = Math.min(100, (received / estimated) * 100).toFixed(1);
+    this.progressFill.style.width = pct + '%';
+
+    const elapsed = ((performance.now() - this.startTime) / 1000).toFixed(1);
+    this.detailText.textContent =
+      `${decoded}/${K} decoded · ${received} received · ${elapsed}s`;
   }
 
   _onComplete() {
@@ -193,6 +217,7 @@ class Receiver {
       `${formatSize(content.length)} · ${this.blocksReceived} blocks received · ${elapsed}s`;
     this.completePanel.classList.add('visible');
     this.progressFill.style.width = '100%';
+    this.cameraOverlay.classList.add('visible');
   }
 
   _saveFile() {

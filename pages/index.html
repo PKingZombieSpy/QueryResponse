@@ -11,6 +11,7 @@
 <header>
   <h1>QueryResponse</h1>
   <p>Transfer files between devices using animated QR codes</p>
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
 </header>
 
 <div class="mode-toggle">
@@ -60,10 +61,11 @@
 
   <div id="camera-area" class="camera-area">
     <video id="camera-video" playsinline></video>
+    <div class="camera-overlay" id="camera-overlay">
+      <div class="progress-bar"><div class="fill" id="receive-progress-fill"></div></div>
+      <div class="overlay-text" id="receive-detail"></div>
+    </div>
   </div>
-
-  <div class="progress-bar"><div class="fill" id="receive-progress-fill"></div></div>
-  <div class="status-text" id="receive-detail"></div>
 
   <button id="btn-scan" class="btn btn-primary">📷 Start Scanning</button>
   <button id="btn-scan-stop" class="btn btn-stop hidden">⏹ Stop</button>

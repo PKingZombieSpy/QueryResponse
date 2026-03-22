@@ -14,7 +14,7 @@ class Sender {
     this.startTime = 0;
 
     // Defaults
-    this.fps = 10;
+    this.fps = 5;
     this.blockSize = 680;
 
     // DOM elements
@@ -152,7 +152,6 @@ class Sender {
     this.btnStart.disabled = !this.fileData;
     this.qrArea.classList.remove('visible');
     this.statusText.textContent = '';
-    this.progressFill.style.width = '0%';
 
     // Restore QR size control
     this.qrSizeControl.style.display = '';
@@ -209,10 +208,15 @@ class Sender {
       canvas.height = size;
       const ctx = canvas.getContext('2d');
 
-      // White background (including quiet zone)
-      ctx.fillStyle = '#ffffff';
+      // Read QR colors from CSS custom properties (follows light/dark theme)
+      const styles = getComputedStyle(document.documentElement);
+      const moduleColor = styles.getPropertyValue('--qr-module').trim() || '#000000';
+      const bgColor = styles.getPropertyValue('--qr-bg').trim() || '#ffffff';
+
+      // Background (including quiet zone)
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, size, size);
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = moduleColor;
 
       // Draw QR modules
       for (let row = 0; row < moduleCount; row++) {

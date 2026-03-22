@@ -1,4 +1,4 @@
-// js/app.js — Main entry: mode switching, initialization
+// js/app.js — Main entry: mode switching, theme toggle, initialization
 
 'use strict';
 
@@ -31,4 +31,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnSend.addEventListener('click', () => setMode('send'));
   btnReceive.addEventListener('click', () => setMode('receive'));
+
+  // ── Theme toggle (light/dark) ──────────────────────────────────────
+  const themeToggle = document.getElementById('theme-toggle');
+  const savedTheme = localStorage.getItem('qr-theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    themeToggle.textContent = '☀️';
+  }
+
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('qr-theme', isDark ? 'dark' : 'light');
+  });
 });

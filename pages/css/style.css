@@ -1,13 +1,29 @@
-/* css/style.css — Minimal functional styling for QueryResponse */
+/* css/style.css — Styling for QueryResponse */
 
 :root {
+  /* Light mode (default) */
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --accent: #e94560;
+  --text: #1d1d1f;
+  --text-dim: #6e6e73;
+  --radius: 8px;
+  --border: rgba(0, 0, 0, 0.12);
+  --slider-track: rgba(0, 0, 0, 0.1);
+  --qr-module: #000000;
+  --qr-bg: #ffffff;
+}
+
+body.dark-mode {
   --bg: #1a1a2e;
   --surface: #16213e;
-  --primary: #0f3460;
   --accent: #e94560;
-  --text: #eee;
-  --text-dim: #999;
-  --radius: 8px;
+  --text: #eeeeee;
+  --text-dim: #999999;
+  --border: rgba(255, 255, 255, 0.1);
+  --slider-track: rgba(255, 255, 255, 0.1);
+  --qr-module: #ffffff;
+  --qr-bg: #1a1a2e;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,7 +41,8 @@ header {
   text-align: center;
   padding: 1rem;
   background: var(--surface);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--border);
+  position: relative;
 }
 
 header h1 {
@@ -38,6 +55,21 @@ header p {
   font-size: 0.8rem;
   color: var(--text-dim);
   margin-top: 0.25rem;
+}
+
+/* ── Theme Toggle ────────────────────────────────────────────────────── */
+
+.theme-toggle {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  line-height: 1;
 }
 
 /* ── Mode Toggle ─────────────────────────────────────────────────────── */
@@ -99,7 +131,7 @@ header p {
 .drop-zone {
   width: 100%;
   min-height: 150px;
-  border: 2px dashed rgba(255,255,255,0.3);
+  border: 2px dashed var(--border);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
@@ -181,7 +213,7 @@ header p {
 
 .settings input, .settings select {
   padding: 0.4rem 0.6rem;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
@@ -200,7 +232,7 @@ header p {
 .settings input[type="range"]::-webkit-slider-track {
   width: 100%;
   height: 6px;
-  background: rgba(255,255,255,0.1);
+  background: var(--slider-track);
   border-radius: 3px;
   border: none;
 }
@@ -217,7 +249,7 @@ header p {
 }
 
 .settings input[type="range"]::-moz-range-track {
-  background: rgba(255,255,255,0.1);
+  background: var(--slider-track);
   border: none;
   border-radius: 3px;
   height: 6px;
@@ -298,7 +330,6 @@ header p {
 .qr-area canvas {
   max-width: 100%;
   border: none;
-  background: var(--bg);
   image-rendering: pixelated;
 }
 
@@ -317,33 +348,51 @@ header p {
   display: block;
 }
 
-/* ── Progress ────────────────────────────────────────────────────────── */
+/* Overlay at bottom of camera for progress during scanning */
+.camera-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  display: none;
+  pointer-events: none;
+}
 
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 3px;
+.camera-overlay.visible {
+  display: block;
+}
+
+.camera-overlay .progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
   overflow: hidden;
 }
 
-.progress-bar .fill {
+.camera-overlay .progress-bar .fill {
   height: 100%;
-  background: var(--accent);
+  background: #27ae60;
   transition: width 0.3s ease;
   width: 0%;
 }
+
+.camera-overlay .overlay-text {
+  color: #fff;
+  font-size: 0.75rem;
+  text-align: center;
+  margin-top: 0.35rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* ── Status Text ─────────────────────────────────────────────────────── */
 
 .status-text {
   font-size: 0.85rem;
   color: var(--text-dim);
   text-align: center;
   min-height: 1.2em;
-}
-
-/* ── Send mode: hide progress bar (infinite blocks) ──────────────────── */
-#send-progress-fill {
-  display: none !important;
 }
 
 /* ── Receive Complete ────────────────────────────────────────────────── */
