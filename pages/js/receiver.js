@@ -179,11 +179,9 @@ class Receiver {
     const received = this.blocksReceived;
     const decoded = this.decoder.decodedCount;
     const K = this.decoder.K;
-    // Estimate total frames needed (~15% overhead typical for LT codes)
-    const estimated = Math.ceil(K * 1.15);
 
-    // Progress bar based on received/estimated (fills smoothly)
-    const pct = Math.min(100, (received / estimated) * 100).toFixed(1);
+    // Progress bar based on actual decoded source blocks (exact, not estimated)
+    const pct = Math.min(100, (decoded / K) * 100).toFixed(1);
     this.progressFill.style.width = pct + '%';
 
     const elapsed = ((performance.now() - this.startTime) / 1000).toFixed(1);

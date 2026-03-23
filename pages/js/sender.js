@@ -18,6 +18,10 @@ class Sender {
     this.fps = 5;
     this.blockSize = 900;
 
+    // Private mode defaults to on; persisted in localStorage
+    const savedPrivate = localStorage.getItem('qr-private');
+    this._privateMode = savedPrivate !== 'off'; // default on
+
     // Wait for qrcodegen module to load
     if (window.qrcodegen) {
       this._qrCodegenReady = true;
@@ -42,8 +46,10 @@ class Sender {
     this.qrSizeInput = document.getElementById('setting-qr-size');
     this.qrSizeDisplay = document.getElementById('qr-size-display');
     this.qrSizeControl = document.getElementById('qr-size-control');
+    this.privateToggle = document.getElementById('private-toggle');
 
     this._bindEvents();
+    this._applyPrivateMode();
   }
 
   _bindEvents() {
@@ -63,6 +69,13 @@ class Sender {
     this.qrSizeInput.addEventListener('input', (e) => {
       const sizes = ['Small', 'Medium', 'Large'];
       this.qrSizeDisplay.textContent = sizes[parseInt(e.target.value) - 1];
+    });
+
+    // Private mode checkbox — hide/show file info immediately
+    this.privateToggle.addEventListener('click', () => {
+      this._privateMode = !this._privateMode;
+      localStorage.setItem('qr-private', this._privateMode ? 'on' : 'off');
+      this._applyPrivateMode();
     });
 
     // Drag & drop
@@ -91,8 +104,9 @@ class Sender {
 
     // Update UI
     this.fileName.textContent = file.name;
-    this.fileDetails.textContent = `${formatSize(file.size)}`;
+    this.fileDetails.textContent = formatSize(file.size);
     this.fileInfo.classList.add('visible');
+    this._applyPrivateMode();
     this.settings.classList.add('visible');
     this.btnStart.disabled = false;
 
@@ -158,8 +172,9 @@ class Sender {
     this.qrSizeControl.style.display = 'none';
 
     const K = this.encoder.K;
-    const currentFps = parseFloat(this.fpsInput.value) || 5;
-    this.fileDetails.textContent = `${formatSize(this.file.size)} · ${K} blocks`;
+    if (!this._privateMode) {
+      this.fileDetails.textContent = `${formatSize(this.file.size)} · ${K} blocks`;
+    }
 
     this._scheduleFrame();
   }
@@ -194,6 +209,15 @@ class Sender {
     }, interval);
   }
 
+  _applyPrivateMode() {
+    const priv = this._privateMode;
+    this.privateToggle.textContent = priv ? '🔒' : '🔓';
+    this.fileInfo.style.display = priv ? 'none' : '';
+    if (this.running && priv) {
+      this.statusText.textContent = '';
+    }
+  }
+
   _renderFrame() {
     const enc = this.encoder;
 
@@ -209,9 +233,11 @@ class Sender {
     this._renderQR(QRFrame.base45Encode(frameBytes));
     this.frameCount++;
 
-    // Update status — show elapsed time and frame count
-    const elapsed = ((performance.now() - this.startTime) / 1000).toFixed(1);
-    this.statusText.textContent = `Frame ${this.frameCount} · ${elapsed}s elapsed`;
+    // Update status — show elapsed time and frame count (unless private)
+    if (!this._privateMode) {
+      const elapsed = ((performance.now() - this.startTime) / 1000).toFixed(1);
+      this.statusText.textContent = `Frame ${this.frameCount} · ${elapsed}s`;
+    }
   }
 
   _renderQR(text) {

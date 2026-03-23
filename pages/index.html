@@ -12,6 +12,7 @@
   <h1>QueryResponse</h1>
   <p>Transfer files between devices using animated QR codes</p>
   <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+  <button id="private-toggle" class="theme-toggle private-toggle" aria-label="Toggle private mode">🔒</button>
 </header>
 
 <div class="mode-toggle">
@@ -43,6 +44,9 @@
       <input type="range" id="setting-qr-size" min="1" max="3" step="1" value="2">
     </label>
   </div>
+  <label id="private-control" class="checkbox-label hidden">
+    <input type="checkbox" id="setting-private"> Private mode
+  </label>
 
   <button id="btn-start" class="btn btn-primary" disabled>▶ Start Sending</button>
 

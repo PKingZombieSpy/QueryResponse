@@ -72,6 +72,10 @@ header p {
   line-height: 1;
 }
 
+.private-toggle {
+  right: 3.25rem;
+}
+
 /* ── Mode Toggle ─────────────────────────────────────────────────────── */
 
 .mode-toggle {
