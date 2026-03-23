@@ -33,7 +33,7 @@ function encodeFrame(sessionId, K, blockId, payload) {
 
 function decodeFrame(base64String) {
   const frame = base64ToUint8(base64String);
-  if (frame.length <= HEADER_SIZE) return null;
+  if (frame.length < HEADER_SIZE) return null;
 
   const view = new DataView(frame.buffer, frame.byteOffset, frame.byteLength);
 

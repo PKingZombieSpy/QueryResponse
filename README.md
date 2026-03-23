@@ -63,20 +63,44 @@ Speed depends on FPS, block size, and QR code complexity. Mobile devices with na
 ## Architecture
 
 ```
-pages/
+pages/                  # Deployed to GitHub Pages
 ├── index.html          # Single page; mode toggle UI
 ├── js/
 │   ├── fountain.js     # LT codec: encoder, decoder, Robust Soliton
 │   ├── qrframe.js      # Frame serialization + forematter
 │   ├── sender.js       # Send mode: file input, QR animation
 │   ├── receiver.js     # Receive mode: camera, scanning, decoding
-│   └── app.js          # Main entry, mode switching
+│   └── app.js          # Main entry, mode switching, theme toggle
 └── css/
-    └── style.css       # Dark theme, mobile-optimized
+    └── style.css       # Light/dark theme, mobile-optimized
+
+test/                   # Tests (not deployed)
+├── run-all.js          # Test runner
+├── test-prng.js        # PRNG quality and seed independence
+├── test-distribution.js # Robust Soliton degree distribution
+├── test-framing.js     # Frame serialization and forematter
+└── test-codec.js       # LT encode/decode round-trips
 
 README.md              # This file
 LICENSE                # MIT
 .gitignore             # Standard
+```
+
+## Running Tests
+
+Tests cover the LT fountain codec, PRNG, degree distribution, and frame
+serialization — everything except the browser UI and QR library integration.
+Only Node.js is required (no additional dependencies).
+
+```bash
+# Run all test suites
+node test/run-all.js
+
+# Run individual suites
+node test/test-prng.js
+node test/test-distribution.js
+node test/test-framing.js
+node test/test-codec.js
 ```
 
 ## Browser Support
