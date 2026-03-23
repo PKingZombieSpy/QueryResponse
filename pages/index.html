@@ -81,14 +81,17 @@
 </div>
 
 <!-- ── Scripts ────────────────────────────────────────────────────── -->
-<!-- QR generation: qrcode-generator (lightweight, canvas support, byte mode) -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<!-- QR generation: nayuki qrcodegen (supports true binary byte mode via encodeBinary) -->
+<script type="module">
+  import qrcodegen from 'https://cdn.jsdelivr.net/npm/nayuki-qr-code-generator@1.8.0/index.js';
+  window.qrcodegen = qrcodegen;
+  window.dispatchEvent(new Event('qrcodegen-ready'));
+</script>
 
 <!-- QR scanning: qr-scanner (uses BarcodeDetector when available, Web Worker fallback) -->
 <script type="module">
   import QrScanner from 'https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js';
   window.QrScanner = QrScanner;
-  // Signal that QrScanner is loaded
   window.dispatchEvent(new Event('qrscanner-ready'));
 </script>
 

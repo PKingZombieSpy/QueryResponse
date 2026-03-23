@@ -23,7 +23,7 @@ Traditional QR-based file transfer requires receiving *every* chunk in order. Mi
 
 ### Sender Side
 1. File is wrapped in a **forematter**: `[file_size:4B][name_length:2B][filename][content]`
-2. Foremattered data is split into **K source blocks** (typically ~680 bytes each)
+2. Foremattered data is split into **K source blocks** (typically ~900 bytes each)
 3. An **LT encoder** generates an infinite stream of encoded blocks, each XOR'ing a random subset of source blocks (degree determined by Robust Soliton Distribution)
 4. Each encoded block is packaged in a **QR frame** with an 8-byte header:
    - Session ID (2 bytes)
@@ -44,19 +44,19 @@ Traditional QR-based file transfer requires receiving *every* chunk in order. Mi
 |---|---|---|
 | **Codec** | LT (Luby Transform) | Custom JS implementation; Robust Soliton Distribution with c=0.03, δ=0.05 |
 | **PRNG** | xorshift32 + splitmix mixing | Seeded by block ID; deterministic on both sides |
-| **Block size** | ~680 bytes (default, configurable) | Trades off between file size and transfer time |
+| **Block size** | ~900 bytes (default, configurable) | Trades off between QR density and transfer speed |
 | **Overhead** | 1.1–1.25× (K blocks) | Depends on file size and channel quality |
-| **QR version** | ~v22–v40 | Auto-selected by library; binary mode, EC level L |
-| **Frame overhead** | 8 bytes header + base64 encoding (~33%) | Total frame ≈920 base64 chars at 680-byte payload |
+| **QR version** | ~v22–v40 | Auto-selected by library; binary byte mode, EC level L |
+| **Frame overhead** | 8 bytes header (no base64 — true binary QR byte mode) | Total frame = 908 bytes at 900-byte payload |
 
 ### Capacity & Timing Estimates
 
 | File Size | Blocks (K) | Frames Needed | Time @ 5 FPS |
 |---|---|---|---|
-| 100 KB | ~150 | ~165 | ~33 sec |
-| 500 KB | ~740 | ~815 | ~2.7 min |
-| 1 MB | ~1500 | ~1650 | ~5.5 min |
-| 3 MB | ~4460 | ~4900 | ~16.3 min |
+| 100 KB | ~115 | ~125 | ~25 sec |
+| 500 KB | ~560 | ~615 | ~2.1 min |
+| 1 MB | ~1120 | ~1230 | ~4.1 min |
+| 3 MB | ~3350 | ~3685 | ~12.3 min |
 
 Speed depends on FPS, block size, and QR code complexity. Mobile devices with native `BarcodeDetector` API (Android Chrome) scan faster.
 
@@ -119,7 +119,7 @@ node test/test-codec.js
 
 ## Libraries Used
 
-- **[qrcode-generator](https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/)** — QR generation (canvas output)
+- **[nayuki-qr-code-generator](https://cdn.jsdelivr.net/npm/nayuki-qr-code-generator@1.8.0/)** — QR generation with true binary byte mode (no base64 overhead)
 - **[qr-scanner](https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/)** — QR scanning (BarcodeDetector + Web Worker fallback)
 
 Both are tiny and loaded via CDN.

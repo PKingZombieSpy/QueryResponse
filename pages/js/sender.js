@@ -12,10 +12,18 @@ class Sender {
     this.running = false;
     this.frameCount = 0;
     this.startTime = 0;
+    this._qrCodegenReady = false;
 
     // Defaults
     this.fps = 5;
-    this.blockSize = 680;
+    this.blockSize = 900;
+
+    // Wait for qrcodegen module to load
+    if (window.qrcodegen) {
+      this._qrCodegenReady = true;
+    } else {
+      window.addEventListener('qrcodegen-ready', () => { this._qrCodegenReady = true; }, { once: true });
+    }
 
     // DOM elements
     this.dropZone = document.getElementById('drop-zone');
@@ -93,17 +101,34 @@ class Sender {
     this.sessionId = 0;
   }
 
-  start() {
+  async start() {
     if (!this.fileData) return;
 
-    // Map QR size to block size (QR size is locked during sending)
-    const qrSizeMap = { 1: 350, 2: 680, 3: 1500 };
-    this.blockSize = qrSizeMap[parseInt(this.qrSizeInput.value)] || 680;
+    // Wait for qrcodegen to be available
+    if (!window.qrcodegen) {
+      this.statusText.textContent = 'Loading QR library…';
+      this.qrArea.classList.add('visible');
+      if (!this._qrCodegenReady) {
+        await new Promise((resolve) => {
+          const check = () => { if (this._qrCodegenReady || window.qrcodegen) resolve(); else setTimeout(check, 100); };
+          check();
+          setTimeout(resolve, 5000);
+        });
+      }
+      if (!window.qrcodegen) {
+        this.statusText.textContent = 'Error: QR code library failed to load.';
+        return;
+      }
+    }
 
-    // Validate: base64-encoded frame must fit in a QR code
-    // QR v40 level L holds ~2953 bytes. Base64 of (8 + blockSize) must be < 2953.
-    const frameB64Len = Math.ceil((8 + this.blockSize) / 3) * 4;
-    if (frameB64Len > 2950) {
+    // Map QR size to block size (binary byte mode — no base64 overhead)
+    const qrSizeMap = { 1: 470, 2: 900, 3: 2000 };
+    this.blockSize = qrSizeMap[parseInt(this.qrSizeInput.value)] || 900;
+
+    // Validate: raw frame must fit in a QR code
+    // QR v40 level L holds 2953 bytes in byte mode (no base64 overhead)
+    const frameLen = 8 + this.blockSize;
+    if (frameLen > 2953) {
       this.statusText.textContent = `QR size too large. Please select a smaller size.`;
       this.qrArea.classList.add('visible');
       return;
@@ -173,14 +198,14 @@ class Sender {
 
     // Generate next encoded block
     const block = enc.encode();
-    const base64 = QRFrame.encodeFrame(
+    const frameBytes = QRFrame.encodeFrame(
       this.sessionId,
       enc.K,
       block.blockId,
       block.payload
     );
 
-    this._renderQR(base64);
+    this._renderQR(frameBytes);
     this.frameCount++;
 
     // Update status — show elapsed time and frame count
@@ -189,14 +214,12 @@ class Sender {
   }
 
   _renderQR(data) {
-    // Determine QR version based on data length
-    // qrcode-generator auto-selects version if we pass 0
+    // Encode raw binary data into QR using Nayuki's qrcodegen (true byte mode)
     try {
-      const qr = qrcode(0, 'L');
-      qr.addData(data, 'Byte');
-      qr.make();
+      const QRC = qrcodegen.QrCode;
+      const qr = QRC.encodeBinary(Array.from(data), QRC.Ecc.LOW);
 
-      const moduleCount = qr.getModuleCount();
+      const moduleCount = qr.size;
       const quietZone = 4; // QR standard quiet zone (modules)
       const cellSize = Math.max(2, Math.floor(250 / (moduleCount + quietZone * 2)));
       const qrSize = moduleCount * cellSize;
@@ -221,7 +244,7 @@ class Sender {
       // Draw QR modules
       for (let row = 0; row < moduleCount; row++) {
         for (let col = 0; col < moduleCount; col++) {
-          if (qr.isDark(row, col)) {
+          if (qr.getModule(col, row)) {
             ctx.fillRect(
               padding + col * cellSize,
               padding + row * cellSize,

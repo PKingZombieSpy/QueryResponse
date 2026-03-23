@@ -1,5 +1,5 @@
 // js/qrframe.js — Frame serialization for QR code transport
-// Converts structured data ↔ base64 strings suitable for QR codes
+// Converts structured data ↔ raw binary bytes for QR byte-mode encoding
 //
 // QR frame header (8 bytes):
 //   Bytes 0–1:  Session ID (uint16 BE)
@@ -28,11 +28,25 @@ function encodeFrame(sessionId, K, blockId, payload) {
   view.setUint32(4, blockId, false);
   frame.set(payload, HEADER_SIZE);
 
-  return uint8ToBase64(frame);
+  return frame;
 }
 
-function decodeFrame(base64String) {
-  const frame = base64ToUint8(base64String);
+function decodeFrame(data) {
+  // Accept either a Uint8Array or a string (from QR scanner).
+  // QR byte-mode data decoded by scanners arrives as a Latin-1 string
+  // where each char code maps 1:1 to the original byte value.
+  let frame;
+  if (data instanceof Uint8Array) {
+    frame = data;
+  } else if (typeof data === 'string') {
+    frame = new Uint8Array(data.length);
+    for (let i = 0; i < data.length; i++) {
+      frame[i] = data.charCodeAt(i);
+    }
+  } else {
+    return null;
+  }
+
   if (frame.length < HEADER_SIZE) return null;
 
   const view = new DataView(frame.buffer, frame.byteOffset, frame.byteLength);
@@ -75,25 +89,6 @@ function parseForemattedData(rawData) {
   return { filename, content, fileSize };
 }
 
-// ── Base64 helpers ──────────────────────────────────────────────────────────
-
-function uint8ToBase64(bytes) {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-function base64ToUint8(str) {
-  const binary = atob(str);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
 // ── Exports ─────────────────────────────────────────────────────────────────
 if (typeof globalThis !== 'undefined') {
   globalThis.QRFrame = {
@@ -101,8 +96,6 @@ if (typeof globalThis !== 'undefined') {
     decodeFrame,
     buildForemattedData,
     parseForemattedData,
-    uint8ToBase64,
-    base64ToUint8,
     HEADER_SIZE,
   };
 }

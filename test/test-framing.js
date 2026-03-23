@@ -34,7 +34,7 @@ test('Round-trip: encodeFrame → decodeFrame preserves all fields', () => {
   const payload = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
 
   const encoded = QRFrame.encodeFrame(sessionId, K, blockId, payload);
-  assert.ok(typeof encoded === 'string', 'Encoded should be a string');
+  assert.ok(encoded instanceof Uint8Array, 'Encoded should be a Uint8Array');
 
   const decoded = QRFrame.decodeFrame(encoded);
   assert.strictEqual(decoded.sessionId, sessionId);
@@ -62,9 +62,30 @@ test('Various payload sizes (0, 1, 350, 680, 1500)', () => {
 });
 
 test('Truncated frame (less than header) returns null', () => {
-  // A base64 string that decodes to fewer than 8 bytes
-  const short = QRFrame.uint8ToBase64(new Uint8Array([1, 2, 3]));
-  assert.strictEqual(QRFrame.decodeFrame(short), null);
+  assert.strictEqual(QRFrame.decodeFrame(new Uint8Array([1, 2, 3])), null);
+});
+
+test('Decode from Latin-1 string (simulates QR scanner output)', () => {
+  const sessionId = 0x1234;
+  const K = 50;
+  const blockId = 99;
+  const payload = new Uint8Array([0x00, 0x7F, 0x80, 0xFF, 0xAB]);
+
+  const frameBytes = QRFrame.encodeFrame(sessionId, K, blockId, payload);
+  // Simulate what a QR scanner returns: each byte as a Latin-1 char
+  let str = '';
+  for (let i = 0; i < frameBytes.length; i++) {
+    str += String.fromCharCode(frameBytes[i]);
+  }
+
+  const decoded = QRFrame.decodeFrame(str);
+  assert.strictEqual(decoded.sessionId, sessionId);
+  assert.strictEqual(decoded.K, K);
+  assert.strictEqual(decoded.blockId, blockId);
+  assert.strictEqual(decoded.payload.length, payload.length);
+  for (let i = 0; i < payload.length; i++) {
+    assert.strictEqual(decoded.payload[i], payload[i]);
+  }
 });
 
 test('Session ID edge values (0, 1, 0xFFFF)', () => {
