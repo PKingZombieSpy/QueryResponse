@@ -46,8 +46,8 @@ Traditional QR-based file transfer requires receiving *every* chunk in order. Mi
 | **PRNG** | xorshift32 + splitmix mixing | Seeded by block ID; deterministic on both sides |
 | **Block size** | ~900 bytes (default, configurable) | Trades off between QR density and transfer speed |
 | **Overhead** | 1.1–1.25× (K blocks) | Depends on file size and channel quality |
-| **QR version** | ~v22–v40 | Auto-selected by library; binary byte mode, EC level L |
-| **Frame overhead** | 8 bytes header (no base64 — true binary QR byte mode) | Total frame = 908 bytes at 900-byte payload |
+| **QR version** | ~v22–v40 | Auto-selected by library; base45 alphanumeric mode, EC level L |
+| **Frame overhead** | 8 bytes header + ~3% base45 encoding | Total frame = 908 bytes → 1362 QR chars at 900-byte payload |
 
 ### Capacity & Timing Estimates
 
@@ -119,7 +119,7 @@ node test/test-codec.js
 
 ## Libraries Used
 
-- **[nayuki-qr-code-generator](https://cdn.jsdelivr.net/npm/nayuki-qr-code-generator@1.8.0/)** — QR generation with true binary byte mode (no base64 overhead)
+- **[nayuki-qr-code-generator](https://cdn.jsdelivr.net/npm/nayuki-qr-code-generator@1.8.0/)** — QR generation with base45 alphanumeric encoding (~3% overhead vs binary, scanner-compatible)
 - **[qr-scanner](https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/)** — QR scanning (BarcodeDetector + Web Worker fallback)
 
 Both are tiny and loaded via CDN.
@@ -160,7 +160,7 @@ The transfer is point-to-point and visible (literally on the screen). Authentica
 ## Performance Tuning
 
 - **Increase FPS** (if camera can handle it): Faster transfer, but more QR codes per second
-- **Increase block size** (up to ~2190 bytes): Fewer blocks, fewer frames, but larger QR codes
+- **Increase block size** (up to ~2850 bytes): Fewer blocks, fewer frames, but larger QR codes
 - **Decrease block size** (down to ~100 bytes): Smaller QR codes, easier to scan, but more frames
 
 Experiment with your camera and screen to find the sweet spot.

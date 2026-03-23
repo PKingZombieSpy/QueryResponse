@@ -89,6 +89,56 @@ function parseForemattedData(rawData) {
   return { filename, content, fileSize };
 }
 
+// ── Base45 Encoding (RFC 9285) ──────────────────────────────────────────────
+// Uses the QR alphanumeric character set for efficient QR encoding.
+// QR alphanumeric mode encodes each pair of characters in 11 bits,
+// so base45 has only ~3% overhead vs raw binary — far better than base64's 33%.
+
+const BASE45_CHARSET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+
+function base45Encode(bytes) {
+  let result = '';
+  let i = 0;
+  for (; i + 1 < bytes.length; i += 2) {
+    const val = bytes[i] * 256 + bytes[i + 1];
+    result += BASE45_CHARSET[Math.floor(val / 2025)];
+    result += BASE45_CHARSET[Math.floor((val % 2025) / 45)];
+    result += BASE45_CHARSET[val % 45];
+  }
+  if (i < bytes.length) {
+    result += BASE45_CHARSET[Math.floor(bytes[i] / 45)];
+    result += BASE45_CHARSET[bytes[i] % 45];
+  }
+  return result;
+}
+
+function base45Decode(str) {
+  if (typeof str !== 'string') return null;
+
+  const bytes = [];
+  let i = 0;
+  for (; i + 2 < str.length; i += 3) {
+    const c0 = BASE45_CHARSET.indexOf(str[i]);
+    const c1 = BASE45_CHARSET.indexOf(str[i + 1]);
+    const c2 = BASE45_CHARSET.indexOf(str[i + 2]);
+    if (c0 < 0 || c1 < 0 || c2 < 0) return null;
+    const val = c0 * 2025 + c1 * 45 + c2;
+    if (val > 65535) return null;
+    bytes.push(val >> 8, val & 0xFF);
+  }
+  if (i + 1 < str.length) {
+    const c0 = BASE45_CHARSET.indexOf(str[i]);
+    const c1 = BASE45_CHARSET.indexOf(str[i + 1]);
+    if (c0 < 0 || c1 < 0) return null;
+    const val = c0 * 45 + c1;
+    if (val > 255) return null;
+    bytes.push(val);
+  } else if (i < str.length) {
+    return null; // single leftover character is invalid
+  }
+  return new Uint8Array(bytes);
+}
+
 // ── Exports ─────────────────────────────────────────────────────────────────
 if (typeof globalThis !== 'undefined') {
   globalThis.QRFrame = {
@@ -96,6 +146,8 @@ if (typeof globalThis !== 'undefined') {
     decodeFrame,
     buildForemattedData,
     parseForemattedData,
+    base45Encode,
+    base45Decode,
     HEADER_SIZE,
   };
 }

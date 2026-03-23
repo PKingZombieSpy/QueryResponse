@@ -84,6 +84,7 @@ class Receiver {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           preferredCamera: 'environment', // rear camera on mobile
+          maxScansPerSecond: 15,
         }
       );
 
@@ -123,11 +124,14 @@ class Receiver {
     if (!this.scanning) return;
 
     try {
-      const frame = QRFrame.decodeFrame(result.data);
+      // Base45 decode the scanned string, then parse the binary frame
+      const frameBytes = QRFrame.base45Decode(result.data);
+      if (!frameBytes) return; // not a valid base45 string (unrelated QR code)
+      const frame = QRFrame.decodeFrame(frameBytes);
       if (!frame) return;
       this._handleFrame(frame);
     } catch (e) {
-      // Ignore decode errors — could be unrelated QR codes
+      console.error('Scan processing error:', e);
     }
   }
 

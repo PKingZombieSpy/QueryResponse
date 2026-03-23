@@ -205,6 +205,94 @@ test('File survives full encode → LT → decode → parse pipeline', () => {
   }
 });
 
+// ── Base45 Encoding ──────────────────────────────────────────────────────
+
+console.log('\nBase45 encode/decode:');
+
+test('Round-trip: base45Encode → base45Decode preserves bytes', () => {
+  const data = new Uint8Array([0, 1, 127, 128, 255, 0xDE, 0xAD, 0xBE, 0xEF]);
+  const encoded = QRFrame.base45Encode(data);
+  assert.strictEqual(typeof encoded, 'string', 'Encoded should be a string');
+
+  const decoded = QRFrame.base45Decode(encoded);
+  assert.ok(decoded instanceof Uint8Array);
+  assert.strictEqual(decoded.length, data.length);
+  for (let i = 0; i < data.length; i++) {
+    assert.strictEqual(decoded[i], data[i], `Byte mismatch at ${i}`);
+  }
+});
+
+test('Base45 uses only QR alphanumeric characters', () => {
+  const ALPHANUMERIC = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+  const data = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) data[i] = i;
+
+  const encoded = QRFrame.base45Encode(data);
+  for (let i = 0; i < encoded.length; i++) {
+    assert.ok(ALPHANUMERIC.includes(encoded[i]),
+      `Character '${encoded[i]}' at index ${i} is not in QR alphanumeric set`);
+  }
+});
+
+test('Base45 empty input', () => {
+  const encoded = QRFrame.base45Encode(new Uint8Array(0));
+  assert.strictEqual(encoded, '');
+  const decoded = QRFrame.base45Decode('');
+  assert.ok(decoded instanceof Uint8Array);
+  assert.strictEqual(decoded.length, 0);
+});
+
+test('Base45 single byte', () => {
+  for (const val of [0, 1, 44, 45, 127, 128, 254, 255]) {
+    const data = new Uint8Array([val]);
+    const decoded = QRFrame.base45Decode(QRFrame.base45Encode(data));
+    assert.strictEqual(decoded.length, 1);
+    assert.strictEqual(decoded[0], val, `Failed for byte ${val}`);
+  }
+});
+
+test('Base45 even and odd length inputs', () => {
+  for (let len = 0; len <= 20; len++) {
+    const data = new Uint8Array(len);
+    for (let i = 0; i < len; i++) data[i] = (i * 37 + 13) & 0xFF;
+    const decoded = QRFrame.base45Decode(QRFrame.base45Encode(data));
+    assert.strictEqual(decoded.length, len, `Length mismatch for input len=${len}`);
+    for (let i = 0; i < len; i++) {
+      assert.strictEqual(decoded[i], data[i]);
+    }
+  }
+});
+
+test('Base45 decode rejects invalid characters', () => {
+  assert.strictEqual(QRFrame.base45Decode('abc'), null, 'Lowercase should be rejected');
+  assert.strictEqual(QRFrame.base45Decode('##'), null, 'Hash should be rejected');
+});
+
+test('Base45 decode rejects single leftover character', () => {
+  assert.strictEqual(QRFrame.base45Decode('A'), null, 'Single char should be rejected');
+});
+
+test('Full QR frame round-trip through base45', () => {
+  const sessionId = 0xABCD;
+  const K = 150;
+  const blockId = 0xDEADBEEF;
+  const payload = new Uint8Array(900);
+  for (let i = 0; i < 900; i++) payload[i] = i & 0xFF;
+
+  const frameBytes = QRFrame.encodeFrame(sessionId, K, blockId, payload);
+  const base45Str = QRFrame.base45Encode(frameBytes);
+  const recoveredBytes = QRFrame.base45Decode(base45Str);
+  const frame = QRFrame.decodeFrame(recoveredBytes);
+
+  assert.strictEqual(frame.sessionId, sessionId);
+  assert.strictEqual(frame.K, K);
+  assert.strictEqual(frame.blockId, blockId);
+  assert.strictEqual(frame.payload.length, 900);
+  for (let i = 0; i < 900; i++) {
+    assert.strictEqual(frame.payload[i], payload[i]);
+  }
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

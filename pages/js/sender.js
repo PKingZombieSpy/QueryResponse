@@ -125,10 +125,11 @@ class Sender {
     const qrSizeMap = { 1: 470, 2: 900, 3: 2000 };
     this.blockSize = qrSizeMap[parseInt(this.qrSizeInput.value)] || 900;
 
-    // Validate: raw frame must fit in a QR code
-    // QR v40 level L holds 2953 bytes in byte mode (no base64 overhead)
+    // Validate: base45-encoded frame must fit in QR alphanumeric mode
+    // QR v40 level L holds 4296 alphanumeric characters
     const frameLen = 8 + this.blockSize;
-    if (frameLen > 2953) {
+    const base45Len = Math.ceil(frameLen / 2) * 3;
+    if (base45Len > 4296) {
       this.statusText.textContent = `QR size too large. Please select a smaller size.`;
       this.qrArea.classList.add('visible');
       return;
@@ -205,7 +206,7 @@ class Sender {
       block.payload
     );
 
-    this._renderQR(frameBytes);
+    this._renderQR(QRFrame.base45Encode(frameBytes));
     this.frameCount++;
 
     // Update status — show elapsed time and frame count
@@ -213,11 +214,11 @@ class Sender {
     this.statusText.textContent = `Frame ${this.frameCount} · ${elapsed}s elapsed`;
   }
 
-  _renderQR(data) {
-    // Encode raw binary data into QR using Nayuki's qrcodegen (true byte mode)
+  _renderQR(text) {
+    // Encode base45 text into QR using Nayuki's qrcodegen (alphanumeric mode)
     try {
       const QRC = qrcodegen.QrCode;
-      const qr = QRC.encodeBinary(Array.from(data), QRC.Ecc.LOW);
+      const qr = QRC.encodeText(text, QRC.Ecc.LOW);
 
       const moduleCount = qr.size;
       const quietZone = 4; // QR standard quiet zone (modules)
