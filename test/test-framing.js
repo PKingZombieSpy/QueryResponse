@@ -1,5 +1,20 @@
 #!/usr/bin/env node
-// test/test-framing.js — Frame serialization and forematter tests
+// test/test-framing.js — Frame serialization, forematter, and base45 tests
+//
+// The QR frame wire format is:
+//   [sessionId:2][K:2][blockId:4][payload:blockSize]   (8-byte header)
+//
+// Before chunking, file data is wrapped in a "forematter":
+//   [fileSize:4][nameLen:2][filename:nameLen][content:fileSize]
+//
+// Frames are base45-encoded (RFC 9285) before being placed in QR codes.
+// Base45 maps every pair of bytes to 3 characters drawn from the QR
+// alphanumeric charset (0-9 A-Z SP $%*+-./:).  QR alphanumeric mode
+// encodes each character pair in 11 bits, so the encoding overhead vs
+// raw binary is only ~3% — far less than base64's 33%.  Critically,
+// because the encoded string contains only ASCII alphanumerics and a
+// few safe punctuation characters, it survives any string encoding a
+// QR scanner might use (UTF-8, Latin-1, etc.).
 
 'use strict';
 
@@ -206,6 +221,16 @@ test('File survives full encode → LT → decode → parse pipeline', () => {
 });
 
 // ── Base45 Encoding ──────────────────────────────────────────────────────
+// Base45 (RFC 9285) encodes binary data using the 45-character QR
+// alphanumeric alphabet.  Two input bytes (value 0–65535) map to three
+// characters: value = c₀·45² + c₁·45 + c₂.  A trailing odd byte maps
+// to two characters: value = c₀·45 + c₁.  Since 45² = 2025 and
+// 44·2025 + 44·45 + 44 = 91124 > 65535, three characters can represent
+// any pair of bytes.
+//
+// These tests verify round-trip fidelity, charset compliance, and
+// rejection of invalid input (lowercase, unknown symbols, odd-length
+// encoded strings that would indicate a truncated triplet).
 
 console.log('\nBase45 encode/decode:');
 
@@ -273,6 +298,10 @@ test('Base45 decode rejects single leftover character', () => {
 });
 
 test('Full QR frame round-trip through base45', () => {
+  // Simulates the full sender→receiver pipeline: encodeFrame produces
+  // binary bytes, base45Encode makes them QR-safe, the scanner returns
+  // the base45 string, base45Decode recovers the bytes, decodeFrame
+  // parses the header and payload.
   const sessionId = 0xABCD;
   const K = 150;
   const blockId = 0xDEADBEEF;

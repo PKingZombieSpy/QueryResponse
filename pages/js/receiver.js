@@ -84,7 +84,6 @@ class Receiver {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           preferredCamera: 'environment', // rear camera on mobile
-          maxScansPerSecond: 15,
         }
       );
 
